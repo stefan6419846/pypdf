@@ -57,11 +57,16 @@ jobs:
       matrix:
         python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
         use-crypto-lib: ["cryptography"]
+        use-latest: [false]
         include:
           - python-version: "3.7"
             use-crypto-lib: "pycryptodome"
+            use-latest: false
           - python-version: "3.7"
             use-crypto-lib: "none"
+            use-latest: false
+          - python-version: "3.12"
+            use-latest: true
     steps:
     - name: Update APT packages
       run:
@@ -104,7 +109,11 @@ jobs:
     - name: Install requirements (Python 3.11+)
       run: |
         pip install -r requirements/ci-3.11.txt
-      if: matrix.python-version == '3.11' || matrix.python-version == '3.12'
+      if: (matrix.python-version == '3.11' || matrix.python-version == '3.12' ) && !matrix.use-latest
+    - name: Install requirements (latest)
+      run: |
+        pip install -r requirements/ci.in
+      if: matrix.use-latest
     - name: Remove pycryptodome and cryptography
       run: |
         pip uninstall pycryptodome cryptography -y
@@ -142,10 +151,10 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: 'recursive'
-    - name: Setup Python 3.11
+    - name: Setup Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.11"
+        python-version: "3.12"
         cache: 'pip'
         cache-dependency-path: '**/requirements/ci-3.11.txt'
     - name: Upgrade pip
@@ -153,7 +162,8 @@ jobs:
         python -m pip install --upgrade pip
     - name: Install requirements
       run: |
-        pip install -r requirements/ci-3.11.txt
+        pip install -r requirements/ci.in
+        pip install ruff
     - name: Install pypdf
       run: |
         pip install .
@@ -166,7 +176,7 @@ jobs:
         mypy pypdf
     - name: Test docs build
       run: |
-        pip install -r requirements/docs.txt
+        pip install -r requirements/docs.in
         sphinx-build -n -W --keep-going -T -b html docs build/sphinx/html
 
   package:
