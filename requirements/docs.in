@@ -1,4 +1,4 @@
 sphinx
-sphinx_rtd_theme<2.0.0
-myst_parser==0.16.1
+sphinx_rtd_theme
+myst_parser
 attrs  # required for myst, but not automatically installed by myst
