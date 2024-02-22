@@ -67,6 +67,7 @@ jobs:
             use-latest: false
           - python-version: "3.12"
             use-latest: true
+            use-crypto-lib: "cryptography"
     steps:
     - name: Update APT packages
       run:
