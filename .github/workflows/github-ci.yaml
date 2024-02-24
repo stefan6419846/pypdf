@@ -79,6 +79,11 @@ jobs:
       with:
         path: '**/tests/pdf_cache/*'
         key: cache-downloaded-files
+    - name: Upload missing test file
+      uses: actions/upload-artifact@v4
+      with:
+        name: selbst.72916.pdf
+        path: tests/pdf_cache/selbst.72916.pdf
     - name: Setup Python
       uses: actions/setup-python@v5
       if: matrix.python-version == '3.7' || matrix.python-version == '3.8' || matrix.python-version == '3.9' || matrix.python-version == '3.10'
