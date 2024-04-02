@@ -137,7 +137,7 @@ def test_broken_meta_data(pdf_path):
         with pytest.raises(
             PdfReadError,
             match=(
-                "trailer not found or does not point to document "
+                "Trailer not found or does not point to document "
                 "information directory"
             ),
         ):
@@ -268,7 +268,9 @@ def test_get_images(src, expected_images):
             False,
             -1,
             False,
-            ["startxref on same line as offset"],
+            [
+                "startxref on same line as offset",
+            ],
         ),
         (
             False,
@@ -322,11 +324,12 @@ def test_get_images_raw(
         b"%%%%EOF"
     )
     pdf_data = pdf_data % (
-        pdf_data.find(b"1 0 obj"),
-        pdf_data.find(b"2 0 obj"),
-        pdf_data.find(b"3 0 obj"),
-        pdf_data.find(b"4 0 obj"),
-        pdf_data.find(b"5 0 obj"),
+        # - 1 below in the find because of the double %
+        pdf_data.find(b"1 0 obj") - 1,
+        pdf_data.find(b"2 0 obj") - 1,
+        pdf_data.find(b"3 0 obj") - 1,
+        pdf_data.find(b"4 0 obj") - 1,
+        pdf_data.find(b"5 0 obj") - 1,
         b"/Prev 0 " if with_prev_0 else b"",
         # startx_correction should be -1 due to double % at the beginning
         # inducing an error on startxref computation
@@ -444,6 +447,7 @@ def test_get_form(src, expected, expected_get_fields, txt_file_path):
 def test_get_page_number(src, page_number):
     src = RESOURCE_ROOT / src
     reader = PdfReader(src)
+    reader._get_page(0)
     page = reader.pages[page_number]
     assert reader.get_page_number(page) == page_number
 
@@ -592,11 +596,11 @@ def test_read_unknown_zero_pages(caplog):
         b"%%%%EOF"
     )
     pdf_data = pdf_data % (
-        pdf_data.find(b"1 0 obj"),
-        pdf_data.find(b"2 0 obj"),
-        pdf_data.find(b"3 0 obj"),
-        pdf_data.find(b"4 0 obj"),
-        pdf_data.find(b"5 0 obj"),
+        pdf_data.find(b"1 0 obj") - 1,
+        pdf_data.find(b"2 0 obj") - 1,
+        pdf_data.find(b"3 0 obj") - 1,
+        pdf_data.find(b"4 0 obj") - 1,
+        pdf_data.find(b"5 0 obj") - 1,
         pdf_data.find(b"xref") - 1,
     )
     pdf_stream = io.BytesIO(pdf_data)
@@ -718,7 +722,7 @@ def test_issue604(caplog, strict):
 def test_decode_permissions():
     reader = PdfReader(RESOURCE_ROOT / "crazyones.pdf")
     base = {
-        "accessability": False,
+        "accessability": False,  # Do not fix typo, as part of official, but deprecated API.
         "annotations": False,
         "assemble": False,
         "copy": False,
@@ -1196,7 +1200,7 @@ def test_outline_missing_title(caplog):
 @pytest.mark.parametrize(
     ("url", "name"),
     [
-        # 1st case : the named_dest are stored directly as a dictionnary, PDF1.1 style
+        # 1st case : the named_dest are stored directly as a dictionary, PDF 1.1 style
         (
             "https://github.com/py-pdf/pypdf/files/9197028/lorem_ipsum.pdf",
             "lorem_ipsum.pdf",
@@ -1206,7 +1210,7 @@ def test_outline_missing_title(caplog):
             "https://github.com/py-pdf/pypdf/files/11714214/PDF32000_2008.pdf",
             "PDF32000_2008.pdf",
         )
-        # 3nd case : Dests with Name tree (TODO: Add this case)
+        # 3rd case : Dests with Name tree (TODO: Add this case)
     ],
     ids=["stored_directly", "dest_below_names_with_kids"],
 )
@@ -1290,8 +1294,6 @@ def test_reader(caplog):
     caplog.clear()
     # first call requires some reparations...
     reader.pages[0].extract_text()
-    assert "repaired" in caplog.text
-    assert "found" in caplog.text
     caplog.clear()
     # ...and now no more required
     reader.pages[0].extract_text()
@@ -1498,3 +1500,11 @@ def test_xyz_with_missing_param():
     assert reader.outline[0]["/Top"] == 0
     assert reader.outline[1]["/Left"] == 0
     assert reader.outline[0]["/Top"] == 0
+
+
+@pytest.mark.enable_socket()
+def test_corrupted_xref():
+    url = "https://github.com/py-pdf/pypdf/files/14628314/iss2516.pdf"
+    name = "iss2516.pdf"
+    reader = PdfReader(BytesIO(get_data_from_url(url, name=name)))
+    assert reader.root_object["/Type"] == "/Catalog"

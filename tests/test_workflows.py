@@ -67,7 +67,7 @@ def test_basic_features(tmp_path):
 
     # add some Javascript to launch the print window on opening this PDF.
     # the password dialog may prevent the print dialog from being shown,
-    # comment the the encription lines, if that's the case, to try this out
+    # comment the encryption lines, if that's the case, to try this out
     writer.add_js("this.print({bUI:true,bSilent:false,bShrinkToFit:true});")
 
     # encrypt your new PDF and add a password
@@ -547,7 +547,11 @@ def test_get_fields_warns(tmp_path, caplog, url, name):
         retrieved_fields = reader.get_fields(fileobj=fp)
 
     assert retrieved_fields == {}
-    assert normalize_warnings(caplog.text) == ["Object 2 0 not defined."]
+    assert normalize_warnings(caplog.text) == [
+        "Ignoring wrong pointing object 1 65536 (offset 0)",
+        "Ignoring wrong pointing object 2 65536 (offset 0)",
+        "Object 2 0 not defined.",
+    ]
 
 
 @pytest.mark.enable_socket()
@@ -1045,7 +1049,7 @@ Division / Dept: 50 / 170
 Season: SUMMER-B 2023"""
         in reader.pages[0].extract_text()
     )
-    # currently threre is still a white space on last line missing
+    # currently there is still a white space on last line missing
     # so we can not do a full comparison.
 
 
@@ -1272,3 +1276,12 @@ def test_get_page_showing_field():
             writer._root_object["/AcroForm"]["/Fields"][-1]
         )
     ] == []
+
+
+@pytest.mark.enable_socket()
+def test_extract_empty_page():
+    """Cf #2533"""
+    url = "https://github.com/py-pdf/pypdf/files/14718318/test.pdf"
+    name = "iss2533.pdf"
+    reader = PdfReader(BytesIO(get_data_from_url(url, name)))
+    assert reader.pages[1].extract_text(extraction_mode="layout") == ""
