@@ -127,8 +127,14 @@ jobs:
     - name: Test with pytest
       run: |
         python -m pytest tests --cov=pypdf --cov-append -n auto -vv
+    - name: List files
+      run: |
+        ls -la
     - name: Rename coverage data file
       run: mv .coverage ".coverage.$RANDOM"
+    - nae: List files
+      run: |
+        ls -la
     - name: Upload coverage data
       uses: actions/upload-artifact@v4
       with:
